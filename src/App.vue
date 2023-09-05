@@ -40,7 +40,7 @@
   </div>
 
   <!-- Delete button to remove selected records and markers -->
-  <button>Detlete</button>
+  <button>Delete</button>
 
   <!-- Display the time zone and local time of the latest searched location -->
   <div>
@@ -52,8 +52,48 @@
 
 <script>
 export default {
- 
-}
+ data() {
+   return {
+     userLocation: null,
+      searchLocation: '',
+      searchedLocations: [],
+      selectAll: false,
+      selectedLocations: [],
+      displayedLocations: [],
+      totalPages: 1,
+      latestSearchedLocation: null,
+   };
+ },
+ methods: {
+   getUserLocation() {
+
+   },
+   initMap() {
+    const apiKey = 'AIzaSyBnOZude3pec_o9QgQhDNM7d2HNZ8LlGbI';
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
+    script.defer = true;
+    script.async = true;
+    script.onload = () => {
+      new window.google.maps.Map(document.getElementById('map'), {
+          center: { lat: 43.74822, lng: -79.28941 }, // Set the initial center of the map
+          zoom: 14, // Set the initial zoom level
+        });
+
+        // const marker = new window.google.maps.Marker({
+        //   position: { lat: 43.74822, lng: -79.28941 },
+        //   map: map,
+        //   title: 'Marker Title',
+        // });
+      };
+      document.head.appendChild(script);
+    },
+ },
+ mounted() {
+  this.initMap();
+ },
+
+};
 </script>
 
 <style>
