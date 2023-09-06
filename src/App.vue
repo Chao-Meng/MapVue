@@ -14,13 +14,14 @@
    </div>
   <!-- Display the location on the map-->
   <div id="map" style="height: 600px; width: 100%;"></div>
-
+<!-- Delete button to remove selected records and markers -->
+  <button @click="handleDelete">Delete</button>
   <!-- A table with pagination to show searched places-->
   <table>
     <thead>
       <tr>
         <th>
-          <input type="checkbox" />
+          <input type="checkbox" v-model="selectAll" @change="handleSelectAll"/>
         </th>
         <th>Location</th>
         <th>Time Zone</th>
@@ -29,34 +30,37 @@
     </thead>
     <tbody>
       <!-- Display 10 records per page-->
-      <tr>
+      <tr v-for="(location, index) in displayedLocations" :key="index">
         <td>
-          <input type="checkbox" />
+          <input type="checkbox" v-model="selectedLocations" :value="location" @change="handleSelect" />
         </td>
-        <td>name</td>
-        <td>timeZone</td>
-        <td>localtime</td>
+        <td>{{location.name}}</td>
+        <td>{{location.timeZone}}</td>
+        <td>{{location.localtime}}</td>
       </tr>
     </tbody>
   </table>
 
   <!-- Pagination buttons -->
   <div>
-    <button></button>
+    <button v-for="page in totalPages" :key="page" @click="paginate(page)">{{page}}</button>
   </div>
 
-  <!-- Delete button to remove selected records and markers -->
-  <button>Delete</button>
+  
 
   <!-- Display the time zone and local time of the latest searched location -->
-  <div>
-    <p></p>
+  <div v-if="latestSearchedLocation">
+    <p>Searched location:</p>
+    <p>Location: {{ latestSearchedLocation.name }}</p>
+    <p>Time Zone: {{ latestSearchedLocation.timeZone }}</p>
+    <p>Local Time: {{ latestSearchedLocation.localTime }}</p>
   </div>
  </div>
   
 </template>
 
 <script>
+import { DateTime } from 'luxon';
 export default {
  data() {
    return {
@@ -70,6 +74,9 @@ export default {
       latestSearchedLocation: null,
       map: null,
       marker:null,
+      markers:[],
+      currentPage: 1,
+      itemsPerPage: 10,
    };
  },
  methods: {
@@ -113,27 +120,33 @@ export default {
     script.defer = true;
     script.async = true;
     script.onload = () => {
-      // new window.google.maps.Map(document.getElementById('map'), {
-      //     center: { lat: 43.74822, lng: -79.28941 }, // Set the initial center of the map
-      //     zoom: 14, // Set the initial zoom level
-      //   });
+      
     const mapOptions = {
           center: { lat: 43.74822, lng: -79.28941 },
           zoom: 14,
         };
     this.map = new window.google.maps.Map(document.getElementById('map'), mapOptions);
-        // const marker = new window.google.maps.Marker({
-        //   position: { lat: 43.74822, lng: -79.28941 },
-        //   map: map,
-        //   title: 'Marker Title',
-        // });
       };
       // Append the script to the document to load the API
       document.head.appendChild(script);
     },
     handleSearch() {
       const locationName = this.searchLocation.trim();
+      
       if (locationName) {
+const formattedLocationName = locationName.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+        const existingLocationIndex = this.searchedLocations.findIndex(
+      (location) => location.name === formattedLocationName
+      
+    );
+     if (existingLocationIndex !== -1) {
+       const cityTimeZone = 'GMT';
+       const localTime = DateTime.now().setZone(cityTimeZone).toLocaleString(DateTime.TIME_SIMPLE);
+      this.searchedLocations[existingLocationIndex].timeZone = cityTimeZone
+      this.searchedLocations[existingLocationIndex].localTime = localTime;
+     }else{
+
+     
         //Creating geocoding services
         const geocoder = new window.google.maps.Geocoder();
         //Converting addresses to latitude and longitude using geocoding services
@@ -141,24 +154,69 @@ export default {
           if (status === 'OK' && results[0]) {
             //Get the geographic coordinates of the first result
             const location = results[0].geometry.location;
+            /*Display the location on a map and add a marker to 
+            each searched location every time the location changes.*/
             this.marker = new window.google.maps.Marker({
               position: location,
               map: this.map,
               title: locationName,
             });
+            this.markers.push(this.marker);
             //Move the window view to the location of the search results
             this.map.setCenter(location);
-        
-    // this.searchedLocations.push(searchResult);
+            
+        const searchResult = {
+          name: formattedLocationName,
+          timeZone:'GMT',
+          localTime:'12:00AM',
+        }
+     //this.searchedLocations.push(searchResult);
+     this.searchedLocations.unshift(searchResult);
+     this.displayedLocations = this.searchedLocations.slice(0,9);
     //clear the input box
     this.searchLocation = '';
+     this.totalPages = Math.ceil(this.searchedLocations.length / this.itemsPerPage);
     } else {
             console.error('Geocode was not successful for the following reason: ' + status);
             alert('City not found. Please enter a valid city name.');
          } });
+         }
     }else{
       console.log('Please enter a location name.');
     }},
+    handleSelectAll() {
+      this.selectedLocations = [...this.displayedLocations];
+    },
+    handleSelect(location) {
+      if(this.selectedLocations.includes(location)) {
+        const index = this.selectedLocations.indexOf(location);
+        this.selectedLocations.splice(index,1);
+      }else {
+        this.selectedLocations.push(location)
+      }
+    },
+    handleDelete() {
+      if (this.selectedLocations.length > 0) {
+      this.selectedLocations.forEach((location) => {
+        const idToRemove = location.id;
+        const markerToRemove = this.markers.find((marker) => marker.id === idToRemove);
+        if (markerToRemove) {
+        markerToRemove.setMap(null);
+        }
+        const indexToRemove = this.displayedLocations.findIndex((loc) => loc.id === idToRemove);
+        if (indexToRemove !== -1) {
+          this.displayedLocations.splice(indexToRemove, 1);
+        }
+      });
+       this.selectedLocations = [];
+    }
+    },
+    paginate(page){
+      const startIndex = (page - 1) * this.itemsPerPage;
+      const endIndex = startIndex + this.itemsPerPage;
+      this.currentPage = page;
+      this.displayedLocations = this.searchedLocations.slice(startIndex, endIndex);
+    }
  },
  mounted() {
    // Initialize the map
