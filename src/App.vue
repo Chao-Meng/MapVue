@@ -7,21 +7,21 @@
      <img src="./map.png" alt="Get Current Location" /> 
      </button> 
      </div>
-   <div>
+   <div id="search-container">
      <!-- The search module-->
      <input v-model = "searchLocation" @keyup.enter="handleSearch" placeholder="Enter a location" />
-      <button @click="handleSearch">Go</button>
+      <button id="map-button" @click="handleSearch">Go</button>
    </div>
   <!-- Display the location on the map-->
   <div id="map" style="height: 600px; width: 100%;"></div>
 <!-- Delete button to remove selected records and markers -->
-  <button @click="handleDelete">Delete</button>
+  <button id="delete-button" @click="handleDelete">Delete</button>
   <!-- A table with pagination to show searched places-->
-  <table>
+  <table id="custom-table">
     <thead>
       <tr>
         <th>
-          <input type="checkbox" v-model="selectAll" @change="handleSelectAll"/>
+          <input id="custom-checkbox" type="checkbox" v-model="selectAll" @change="handleSelectAll"/>
         </th>
         <th>Location</th>
         <th>Time Zone</th>
@@ -32,18 +32,18 @@
       <!-- Display 10 records per page-->
       <tr v-for="(location, index) in displayedLocations" :key="index">
         <td>
-          <input type="checkbox" v-model="selectedLocations" :value="location" @change="handleSelect" />
+          <input id="custom-checkbox" type="checkbox" v-model="selectedLocations" :value="location" @change="handleSelect" />
         </td>
         <td>{{location.name}}</td>
         <td>{{location.timeZone}}</td>
-        <td>{{location.localtime}}</td>
+        <td>{{location.localTime}}</td>
       </tr>
     </tbody>
   </table>
 
   <!-- Pagination buttons -->
   <div>
-    <button v-for="page in totalPages" :key="page" @click="paginate(page)">{{page}}</button>
+    <button id="page-button" v-for="page in totalPages" :key="page" @click="paginate(page)">{{page}}</button>
   </div>
 
   
@@ -60,7 +60,7 @@
 </template>
 
 <script>
-import { DateTime } from 'luxon';
+import { DateTime} from 'luxon';
 export default {
  data() {
    return {
@@ -130,71 +130,186 @@ export default {
       // Append the script to the document to load the API
       document.head.appendChild(script);
     },
-    handleSearch() {
-      const locationName = this.searchLocation.trim();
+  //   handleSearch() {
+  //     const locationName = this.searchLocation.trim();
       
-      if (locationName) {
-const formattedLocationName = locationName.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
-        const existingLocationIndex = this.searchedLocations.findIndex(
-      (location) => location.name === formattedLocationName
+  //     if (locationName) {
+  //       const formattedLocationName = locationName.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+  //       const existingLocationIndex = this.searchedLocations.findIndex(
+  //     (location) => location.name === formattedLocationName
       
-    );
-     if (existingLocationIndex !== -1) {
-       const cityTimeZone = 'GMT';
-       const localTime = DateTime.now().setZone(cityTimeZone).toLocaleString(DateTime.TIME_SIMPLE);
-      this.searchedLocations[existingLocationIndex].timeZone = cityTimeZone
-      this.searchedLocations[existingLocationIndex].localTime = localTime;
-     }else{
+  //   );
+  //    if (existingLocationIndex !== -1) {
+  //     //  const existingLocation = this.searchedLocations[existingLocationIndex];
+  //     const latitude = this.searchedLocations[existingLocationIndex].lat;
+  //     const longitude = this.searchedLocations[existingLocationIndex].lng;
+  //      fetch(`https://maps.googleapis.com/maps/api/timezone/json?location=${latitude},${longitude}&timestamp=${Date.now() / 1000}&key=AIzaSyBnOZude3pec_o9QgQhDNM7d2HNZ8LlGbI&timeZoneName=true`)
+  //      .then(response => response.json())
+  // .then(data => {
+  //     const cityTimeZone = data.timeZoneId;
+  //     const localTime = DateTime.now().setZone(cityTimeZone).toLocaleString(DateTime.TIME_SIMPLE);
+  //     //const formattedTimeZone = cityTimeZone.split('/').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('/');
+  //      this.searchedLocations[existingLocationIndex].timeZone = cityTimeZone;
+  //      this.searchedLocations[existingLocationIndex].localTime = localTime;
+  // }).catch(error => {
+  //   console.error("Error fetching time zone data:", error);
+  // });
+  //    }else{
 
      
-        //Creating geocoding services
-        const geocoder = new window.google.maps.Geocoder();
-        //Converting addresses to latitude and longitude using geocoding services
-        geocoder.geocode({ address: locationName }, (results, status) => {
-          if (status === 'OK' && results[0]) {
-            //Get the geographic coordinates of the first result
-            const location = results[0].geometry.location;
-            /*Display the location on a map and add a marker to 
-            each searched location every time the location changes.*/
-            this.marker = new window.google.maps.Marker({
-              position: location,
-              map: this.map,
-              title: locationName,
-            });
-            this.markers.push(this.marker);
-            //Move the window view to the location of the search results
-            this.map.setCenter(location);
+  //       //Creating geocoding services
+  //       const geocoder = new window.google.maps.Geocoder();
+  //       //Converting addresses to latitude and longitude using geocoding services
+  //       geocoder.geocode({ address: locationName }, (results, status) => {
+  //         if (status === 'OK' && results[0]) {
+  //           //Get the geographic coordinates of the first result
+  //           const location = results[0].geometry.location;
+  //           const latitude = results[0].geometry.location.lat();
+  //           const longitude = results[0].geometry.location.lng();
+  //           /*Display the location on a map and add a marker to 
+  //           each searched location every time the location changes.*/
+  //           this.marker = new window.google.maps.Marker({
+  //             position: location,
+  //             map: this.map,
+  //             title: locationName,
+  //           });
+
+  //           this.markers.push(this.marker);
+  //           //Move the window view to the location of the search results
+  //           this.map.setCenter(location);
             
-        const searchResult = {
-          name: formattedLocationName,
-          timeZone:'GMT',
-          localTime:'12:00AM',
+  //       const searchResult = {
+  //         name: formattedLocationName,
+  //         timeZone: '',
+  //         localTime:'',
+  //          lat: latitude,
+  //          lng: longitude,
+  //       }
+  //   // this.searchedLocations.push(searchResult);
+  //    this.searchedLocations.unshift(searchResult);
+  //    this.displayedLocations = this.searchedLocations.slice(0,9);
+  //   //clear the input box
+  //   this.searchLocation = '';
+  //    this.totalPages = Math.ceil(this.searchedLocations.length / this.itemsPerPage);
+  //   } else {
+  //           console.error('Geocode was not successful for the following reason: ' + status);
+  //           alert('City not found. Please enter a valid city name.');
+  //        } });
+  //        }
+  //   }else{
+  //     console.log('Please enter a location name.');
+  //   }},
+handleSearch() {
+  const locationName = this.searchLocation.trim();
+
+  if (locationName) {
+    const formattedLocationName = locationName.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+    const existingLocationIndex = this.searchedLocations.findIndex(
+      (location) => location.name === formattedLocationName
+    );
+
+    // Creating geocoding services
+    const geocoder = new window.google.maps.Geocoder();
+    // Converting addresses to latitude and longitude using geocoding services
+    geocoder.geocode({ address: locationName }, (results, status) => {
+      if (status === 'OK' && results[0]) {
+        // Get the geographic coordinates of the first result
+        const location = results[0].geometry.location;
+        const latitude = location.lat();
+        const longitude = location.lng();
+
+        // Check if the location already exists
+        if (existingLocationIndex !== -1) {
+          const existingLocation = this.searchedLocations[existingLocationIndex];
+          this.updateLocationDetails(existingLocation, latitude, longitude);
+        } else {
+          this.addNewLocation(formattedLocationName, latitude, longitude);
         }
-     //this.searchedLocations.push(searchResult);
-     this.searchedLocations.unshift(searchResult);
-     this.displayedLocations = this.searchedLocations.slice(0,9);
-    //clear the input box
-    this.searchLocation = '';
-     this.totalPages = Math.ceil(this.searchedLocations.length / this.itemsPerPage);
-    } else {
-            console.error('Geocode was not successful for the following reason: ' + status);
-            alert('City not found. Please enter a valid city name.');
-         } });
-         }
-    }else{
-      console.log('Please enter a location name.');
-    }},
+      } else {
+        console.error('Geocode was not successful for the following reason: ' + status);
+        alert('City not found. Please enter a valid city name.');
+      }
+    });
+  } else {
+    console.log('Please enter a location name.');
+  }
+},
+updateLocationDetails(existingLocation, latitude, longitude) {
+    fetch(`https://maps.googleapis.com/maps/api/timezone/json?location=${latitude},${longitude}&timestamp=${Date.now() / 1000}&key=AIzaSyBnOZude3pec_o9QgQhDNM7d2HNZ8LlGbI&timeZoneName=true`)
+      .then(response => response.json())
+      .then(data => {
+        const cityTimeZone = data.timeZoneId;
+        const localTime = DateTime.now().setZone(cityTimeZone).toFormat('yyyy-MM-dd HH:mm:ss');
+      //  const cityTimeZone = data.timeZoneId;
+      //   const zone = IANAZone.create(cityTimeZone);
+      //   const localTime = DateTime.now().setZone(zone).toFormat('yyyy-MM-dd HH:mm:ss');
+       existingLocation.timeZone = cityTimeZone;
+        existingLocation.localTime = localTime;
+        this.moveLocationToTop(existingLocation);
+        this.searchLocation = ''
+      })
+      .catch(error => {
+        console.error("Error fetching time zone data:", error);
+      });
+  },
+  
+  addNewLocation(name, latitude, longitude) {
+    fetch(`https://maps.googleapis.com/maps/api/timezone/json?location=${latitude},${longitude}&timestamp=${Date.now() / 1000}&key=AIzaSyBnOZude3pec_o9QgQhDNM7d2HNZ8LlGbI&timeZoneName=true`)
+      .then(response => response.json())
+      .then(data => {
+        const cityTimeZone = data.timeZoneId;
+       const localTime = DateTime.now().setZone(cityTimeZone).toFormat('yyyy-MM-dd HH:mm:ss');
+       console.log('Local Time:', localTime);
+       const searchResult = {
+          name: name,
+          timeZone: cityTimeZone,
+          localTime: localTime,
+          // lat: latitude,
+          // lng: longitude,
+        };
+        this.searchedLocations.unshift(searchResult);
+        this.displayedLocations = this.searchedLocations.slice(0, 9);
+        this.searchLocation = '';
+        this.totalPages = Math.ceil(this.searchedLocations.length / this.itemsPerPage);
+      })
+      .catch(error => {
+        console.error("Error fetching time zone data:", error);
+      });
+  },
+  
+  moveLocationToTop(location) {
+    const index = this.searchedLocations.indexOf(location);
+    if (index !== -1) {
+      this.searchedLocations.splice(index, 1);
+      this.searchedLocations.unshift(location);
+      this.displayedLocations = this.searchedLocations.slice(0, 9);
+    }
+  },
+
     handleSelectAll() {
+       //this.selectAll = !this.selectAll;
+      if (this.selectAll) {
+        // 如果全选被勾选，将当前页的所有行都加入 selectedLocations
       this.selectedLocations = [...this.displayedLocations];
+      }else{
+        // 如果全选被取消，清空 selectedLocations
+         this.selectedLocations = [];
+      }
     },
     handleSelect(location) {
+      if (this.selectedLocations.length !== this.displayedLocations.length) {
+        this.selectAll = false;
+        }
       if(this.selectedLocations.includes(location)) {
         const index = this.selectedLocations.indexOf(location);
         this.selectedLocations.splice(index,1);
+        
       }else {
         this.selectedLocations.push(location)
       }
+      
     },
+
     handleDelete() {
       if (this.selectedLocations.length > 0) {
       this.selectedLocations.forEach((location) => {
@@ -202,13 +317,24 @@ const formattedLocationName = locationName.toLowerCase().replace(/\b\w/g, (char)
         const markerToRemove = this.markers.find((marker) => marker.id === idToRemove);
         if (markerToRemove) {
         markerToRemove.setMap(null);
+        const markerIndex = this.markers.indexOf(markerToRemove);
+        if (markerIndex !== -1) {
+          this.markers.splice(markerIndex, 1);
         }
-        const indexToRemove = this.displayedLocations.findIndex((loc) => loc.id === idToRemove);
-        if (indexToRemove !== -1) {
-          this.displayedLocations.splice(indexToRemove, 1);
+        }
+        // 从 searchedLocations 中移除选中行
+        const indexToRemove = this.searchedLocations.findIndex((loc) => loc.id === idToRemove);
+      if (indexToRemove !== -1) {
+        this.searchedLocations.splice(indexToRemove, 1);
+      }
+        // 从 displayedLocations 中移除选中行
+        const displayedIndexToRemove = this.displayedLocations.findIndex((loc) => loc.id === idToRemove);
+        if (displayedIndexToRemove  !== -1) {
+          this.displayedLocations.splice(displayedIndexToRemove , 1);
         }
       });
        this.selectedLocations = [];
+       this.selectAll = false; 
     }
     },
     paginate(page){
@@ -231,9 +357,27 @@ const formattedLocationName = locationName.toLowerCase().replace(/\b\w/g, (char)
   position: relative ;
   width:100%;
   height:600px;
-  z-index: 1;
+  z-index: 1;  
 }
-
+#map-button{
+    font-size:15px;
+    padding:3px 5px;
+    margin:2px 2px;
+    background-color:#ddd;
+    color:black;
+    border:none;
+    border-radius:3px;
+    cursor:pointer;
+    transition:background-color 0.3s
+}
+#map-button:hover {
+    background-color: #1195a4;
+  }
+  #search-container{
+     display:flex;
+    justify-content:center;
+    align-items:center;
+  }
 #get-location-button {
   position: absolute;
   top:380px;
@@ -254,6 +398,65 @@ height:30px;
 #get-location-button img:hover {
   background-color: #1195a4;
 }
+#custom-table{
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+#custom-table thead th {
+    background-color: #1195a4;
+    padding: 10px;
+    text-align: left;
+    font-weight: bold;
+    border: 1px solid #ddd;
+  }
+#custom-table tbody td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+  }
+ #custom-table tbody tr:hover {
+    background-color: #1195a4;
+    cursor: pointer;
+  }
+  #custom-checkbox{
+     width: 16px;
+     height: 16px;
+  }
+#pagination-container{
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-top: 5px;
+  }
+ #page-button {
+    font-size:15px;
+    padding:3px 5px;
+    margin:2px 2px;
+    background-color:#ddd;
+    color:black;
+    border:none;
+    border-radius:3px;
+    cursor:pointer;
+    transition:background-color 0.3s;
+  }
+#page-button:hover {
+    background-color: #1195a4;
+  }
+#delete-button{
+    font-size:15px;
+    padding:3px 5px;
+    margin:2px 2px;
+    background-color:#ddd;
+    color:black;
+    border:none;
+    border-radius:3px;
+    cursor:pointer;
+    transition:background-color 0.3s
+  }
+#delete-button:hover {
+    background-color: #1195a4;
+  }
 </style>
 
 
