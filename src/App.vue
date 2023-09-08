@@ -25,7 +25,8 @@
       <tr>
         <th>
           <!-- A checkbox at the beginning of each row to let users select multiple records at the same time. -->
-          <input id="custom-checkbox" type="checkbox" v-model="selectAll" @change="handleSelectAll"/>
+          <!-- //<input id="custom-checkbox" type="checkbox" v-model="selectAll" @change="handleSelectAll"/> -->
+           <input id="custom-checkbox" type="checkbox" v-model="selectAll" @change="handleSelectAll" :disabled="!hasSearchedLocations" />
         </th>
         <th id="column-33">Location</th>
         <th id="column-33">Time Zone</th>
@@ -94,8 +95,9 @@ export default {
         this.map.setZoom(16);
         //Remove the previous marker.
          if (this.marker) {
-          //this.marker.setMap(null);
-          this.marker.setVisible(false)
+          this.marker.setMap(null);
+         // this.marker.setVisible(false);
+          console.log('current marker:',this.marker);
           this.marker = null;
         }        
          this.marker =  new window.google.maps.Marker({
@@ -224,6 +226,9 @@ export default {
   },
 
   handleSelectAll() {  
+    if (!this.hasSearchedLocations) {
+      return;
+    }
     if (this.selectAll) {
     // If Select All is checked, adds all rows on the current page to the selectedLocations
       this.selectedLocations = [...this.displayedLocations];
@@ -327,6 +332,9 @@ export default {
         console.log('currentpage',this.currentPage);
       }
       this.displayedLocations = this.searchedLocations.slice(startIndex, endIndex);
+      //When turning pages, update the status of all checked according to whether
+      // the current row is fully checked or not.
+      this.updateSelectAll(); 
   },
   
 //If the user clicks on a row in the table, the map shows that area and displays the marker
@@ -361,7 +369,12 @@ export default {
     filteredPages() {
       const totalPages = Math.ceil(this.searchedLocations.length / this.itemsPerPage);
       return Array.from({ length: totalPages }, (_, index) => index + 1).filter(page => page > 0);
-    }
+    },
+    hasSearchedLocations() {
+    // 判断是否有搜索记录
+    return this.searchedLocations.length > 0;
+  },
+
   }
 };
 </script>
