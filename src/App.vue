@@ -7,13 +7,15 @@
      <img src="./map.png" alt="Get Current Location" /> 
      </button> 
      </div>
+  
+  <!-- Display the location on the map-->
+  <div id="map" style="height: 600px; width: 100%;"></div>
+
    <div id="search-container">
      <!-- The search module-->
      <input v-model = "searchLocation" @keyup.enter="handleSearch" placeholder="Enter a location" />
       <button id="map-button" @click="handleSearch">Go</button>
    </div>
-  <!-- Display the location on the map-->
-  <div id="map" style="height: 600px; width: 100%;"></div>
 <!-- Delete button to remove selected records and markers -->
   <button id="delete-button" @click="handleDelete">Delete</button>
   <!-- A table with pagination to show searched places-->
@@ -77,6 +79,8 @@ export default {
       markers:[],
       currentPage: 1,
       itemsPerPage: 10,
+      selectedRows:[],
+      locations:[],
    };
  },
  methods: {
@@ -218,6 +222,20 @@ handleSearch() {
         const latitude = location.lat();
         const longitude = location.lng();
 
+ /*Display the location on a map and add a marker to 
+  //           each searched location every time the location changes.*/
+            this.marker = new window.google.maps.Marker({
+              position: location,
+              map: this.map,
+              title: locationName,
+            });
+
+            this.markers.push(this.marker);
+            //Move the window view to the location of the search results
+            this.map.setCenter(location);
+
+
+
         // Check if the location already exists
         if (existingLocationIndex !== -1) {
           const existingLocation = this.searchedLocations[existingLocationIndex];
@@ -287,62 +305,83 @@ updateLocationDetails(existingLocation, latitude, longitude) {
   },
 
     handleSelectAll() {
-       //this.selectAll = !this.selectAll;
+      
       if (this.selectAll) {
         // 如果全选被勾选，将当前页的所有行都加入 selectedLocations
       this.selectedLocations = [...this.displayedLocations];
+      
       }else{
         // 如果全选被取消，清空 selectedLocations
          this.selectedLocations = [];
+          
       }
+     this.updateSelectAll();
     },
+
+    updateSelectAll() {
+  this.selectAll = this.selectedLocations.length === this.displayedLocations.length;
+},
+
     handleSelect(location) {
-      if (this.selectedLocations.length !== this.displayedLocations.length) {
-        this.selectAll = false;
-        }
-      if(this.selectedLocations.includes(location)) {
-        const index = this.selectedLocations.indexOf(location);
-        this.selectedLocations.splice(index,1);
-        
-      }else {
-        this.selectedLocations.push(location)
-      }
       
+    const index = this.selectedLocations.indexOf(location);
+      if (index !== -1) {
+        this.selectedLocations.splice(index, 1);
+      } else {
+        this.selectedLocations.push(location);
+      }
+      this.updateSelectAll();
+
     },
 
     handleDelete() {
-      if (this.selectedLocations.length > 0) {
-      this.selectedLocations.forEach((location) => {
-        const idToRemove = location.id;
-        const markerToRemove = this.markers.find((marker) => marker.id === idToRemove);
-        if (markerToRemove) {
-        markerToRemove.setMap(null);
-        const markerIndex = this.markers.indexOf(markerToRemove);
-        if (markerIndex !== -1) {
-          this.markers.splice(markerIndex, 1);
-        }
-        }
+  if (this.selectedLocations.length > 0) {
+    const locationsToDelete = [...this.selectedLocations]; // 创建要删除的项的副本
+
+    locationsToDelete.forEach((locationToDelete) => {
+      const nameToRemove = locationToDelete.name ? locationToDelete.name.toLowerCase() : null; // 将地点名称转换为小写，如果为空则为null
+ 
+      if (nameToRemove !== null) {
+        // 使用 forEach 循环删除 markers 数组中的标记
+        this.markers.forEach((marker, index) => {
+          const markerTitle = marker.getTitle() ? marker.getTitle().toLowerCase() : null; // 将标记的 title 属性转换为小写，如果为空则为null
+          console.log('move',markerTitle,nameToRemove);
+          if (markerTitle === nameToRemove) {
+           // marker.setMap(null); // 从地图上移除标记
+           marker.setVisible(false);
+
+            console.log('move',marker);
+            this.markers.splice(index, 1); // 从 markers 数组中移除标记
+          }
+        });
+
         // 从 searchedLocations 中移除选中行
-        const indexToRemove = this.searchedLocations.findIndex((loc) => loc.id === idToRemove);
-      if (indexToRemove !== -1) {
-        this.searchedLocations.splice(indexToRemove, 1);
-      }
-        // 从 displayedLocations 中移除选中行
-        const displayedIndexToRemove = this.displayedLocations.findIndex((loc) => loc.id === idToRemove);
-        if (displayedIndexToRemove  !== -1) {
-          this.displayedLocations.splice(displayedIndexToRemove , 1);
+        const indexToRemove = this.searchedLocations.findIndex((loc) => (loc.name ? loc.name.toLowerCase() : null) === nameToRemove);
+        if (indexToRemove !== -1) {
+          this.searchedLocations.splice(indexToRemove, 1);
         }
-      });
-       this.selectedLocations = [];
-       this.selectAll = false; 
-    }
-    },
+
+        // 从 displayedLocations 中移除选中行
+        const displayedIndexToRemove = this.displayedLocations.findIndex((loc) => (loc.name ? loc.name.toLowerCase() : null) === nameToRemove);
+        if (displayedIndexToRemove !== -1) {
+          this.displayedLocations.splice(displayedIndexToRemove, 1);
+        }
+      }
+    });
+
+    // 清空选中的地点
+    this.selectedLocations = [];
+    this.selectAll = false;
+  }
+},
     paginate(page){
       const startIndex = (page - 1) * this.itemsPerPage;
       const endIndex = startIndex + this.itemsPerPage;
       this.currentPage = page;
       this.displayedLocations = this.searchedLocations.slice(startIndex, endIndex);
-    }
+    },
+    
+
  },
  mounted() {
    // Initialize the map
@@ -353,83 +392,91 @@ updateLocationDetails(existingLocation, latitude, longitude) {
 </script>
 
 <style>
-#map-container {
-  position: relative ;
-  width:100%;
-  height:600px;
-  z-index: 1;  
-}
-#map-button{
-    font-size:15px;
-    padding:3px 5px;
-    margin:2px 2px;
-    background-color:#ddd;
-    color:black;
-    border:none;
-    border-radius:3px;
-    cursor:pointer;
-    transition:background-color 0.3s
-}
-#map-button:hover {
-    background-color: #1195a4;
+  #map-container {
+    position: relative ;
+    width:100%;
+    height:600px;
+    z-index: 1;  
   }
+
+  #map-button{
+      font-size:15px;
+      padding:3px 5px;
+      margin:2px 2px;
+      background-color:#ddd;
+      color:black;
+      border:none;
+      border-radius:3px;
+      cursor:pointer;
+      transition:background-color 0.3s
+  }
+  #map-button:hover {
+      background-color: #1195a4;
+  }
+
   #search-container{
-     display:flex;
+      display:flex;
     justify-content:center;
     align-items:center;
   }
-#get-location-button {
-  position: absolute;
-  top:380px;
-  right:-10px; 
-  
-  color: #fff;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  z-index: 2;
-}
 
-#get-location-button img {
-width:25px;
-height:30px;
-}
-#get-location-button img:hover {
-  background-color: #1195a4;
-}
-#custom-table{
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-#custom-table thead th {
+  #get-location-button {
+    position: absolute;
+    top:360px;
+    right:-10px; 
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  #get-location-button img {
+  width:25px;
+  height:30px;
+  }
+  #get-location-button img:hover {
     background-color: #1195a4;
-    padding: 10px;
-    text-align: left;
-    font-weight: bold;
-    border: 1px solid #ddd;
   }
-#custom-table tbody td {
-    padding: 10px;
-    text-align: left;
-    border: 1px solid #ddd;
+
+  #custom-table{
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
   }
- #custom-table tbody tr:hover {
+
+  #custom-table thead th {
+      background-color: #1195a4;
+      padding: 10px;
+      text-align: left;
+      font-weight: bold;
+      border: 1px solid #ddd;
+    }
+
+  #custom-table tbody td {
+      padding: 10px;
+      text-align: left;
+      border: 1px solid #ddd;
+  }
+  #custom-table tbody tr:hover {
     background-color: #1195a4;
     cursor: pointer;
   }
+
   #custom-checkbox{
-     width: 16px;
-     height: 16px;
+    width: 16px;
+    height: 16px;
   }
-#pagination-container{
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    margin-top: 5px;
+
+  #pagination-container{
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      margin-top: 5px;
   }
- #page-button {
+
+  #page-button {
     font-size:15px;
     padding:3px 5px;
     margin:2px 2px;
@@ -440,23 +487,26 @@ height:30px;
     cursor:pointer;
     transition:background-color 0.3s;
   }
-#page-button:hover {
-    background-color: #1195a4;
+
+  #page-button:hover {
+      background-color: #1195a4;
   }
-#delete-button{
-    font-size:15px;
-    padding:3px 5px;
-    margin:2px 2px;
-    background-color:#ddd;
-    color:black;
-    border:none;
-    border-radius:3px;
-    cursor:pointer;
-    transition:background-color 0.3s
+
+  #delete-button{
+      font-size:15px;
+      padding:3px 5px;
+      margin:2px 2px;
+      background-color:#ddd;
+      color:black;
+      border:none;
+      border-radius:3px;
+      cursor:pointer;
+      transition:background-color 0.3s
   }
-#delete-button:hover {
-    background-color: #1195a4;
+  #delete-button:hover {
+      background-color: #1195a4;
   }
+
 </style>
 
 
