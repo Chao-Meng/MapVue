@@ -1,7 +1,6 @@
 <template>
  <div id ="map-container">
    <!-- The button to acquire user's cuttent location-->
-   <!-- <button @click="getUserLocation">Get Current Location</button> -->
    <div id="get-location-button"> 
      <button @click="getUserLocation"> 
      <img src="./map.png" alt="Get Current Location" /> 
@@ -25,6 +24,7 @@
     <thead>
       <tr>
         <th>
+          <!-- A checkbox at the beginning of each row to let users select multiple records at the same time. -->
           <input id="custom-checkbox" type="checkbox" v-model="selectAll" @change="handleSelectAll"/>
         </th>
         <th id="column-33">Location</th>
@@ -48,9 +48,8 @@
   </table>
 
   <!-- Pagination buttons -->
-
   <div class="pagination">
-    <button v-for="page in filteredPages" :key="page" @click="paginate(page)">{{ page }}</button>
+    <button id="page-button" v-for="page in filteredPages" :key="page" @click="paginate(page)">{{ page }}</button>
   </div>
   
     <!-- Display the time zone and local time of the latest searched location -->
@@ -60,8 +59,7 @@
     <p>Time Zone: {{ latestSearchedLocation.timeZone }}</p>
     <p>Local Time: {{ latestSearchedLocation.localTime }}</p>
   </div>
- </div>
- 
+ </div> 
 </template>
 
 <script>
@@ -301,8 +299,7 @@ export default {
           this.displayedLocations.splice(displayedIndexToRemove, 1);
         }
         this.rowsSelected = false;
-      }
-      
+      } 
     });
 
     // Clear the selected locations
@@ -331,7 +328,8 @@ export default {
       }
       this.displayedLocations = this.searchedLocations.slice(startIndex, endIndex);
   },
-
+  
+//If the user clicks on a row in the table, the map shows that area and displays the marker
   toggleMarker(location) {
     const marker = this.findMarkerForLocation(location);
     if (marker) {
@@ -352,7 +350,7 @@ export default {
     return this.markers.find(
       (marker) => marker.getTitle().toLowerCase() === location.name.toLowerCase()
     );
-  },
+    },
   },
   mounted() {
     // Initialize the map
@@ -365,7 +363,6 @@ export default {
       return Array.from({ length: totalPages }, (_, index) => index + 1).filter(page => page > 0);
     }
   }
-
 };
 </script>
 
@@ -471,7 +468,7 @@ export default {
   }
 
   #page-button:hover {
-      background-color: #1195a4;
+    background-color: #1195a4;
   }
 
   #delete-button{
