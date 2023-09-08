@@ -32,7 +32,9 @@
     </thead>
     <tbody>
       <!-- Display 10 records per page-->
-      <tr v-for="(location, index) in displayedLocations" :key="index">
+      <tr v-for="(location, index) in displayedLocations" :key="index"
+      @click="toggleMarker(location)"
+      :class="{ 'selected-row': isSelected(location) }">
         <td>
           <input id="custom-checkbox" type="checkbox" v-model="selectedLocations" :value="location" @change="handleSelect" />
         </td>
@@ -45,7 +47,11 @@
 
   <!-- Pagination buttons -->
   <div>
-    <button id="page-button" v-for="page in totalPages" :key="page" @click="paginate(page)">{{page}}</button>
+   <!-- <button id="page-button" v-for="page in totalPages" :key="page" @click="paginate(page)">{{page}}</button> -->
+   <div class="pagination">
+  <button v-for="page in filteredPages" :key="page" @click="paginate(page)">{{ page }}</button>
+</div>
+
   </div>
 
   
@@ -134,75 +140,7 @@ export default {
       // Append the script to the document to load the API
       document.head.appendChild(script);
     },
-  //   handleSearch() {
-  //     const locationName = this.searchLocation.trim();
-      
-  //     if (locationName) {
-  //       const formattedLocationName = locationName.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
-  //       const existingLocationIndex = this.searchedLocations.findIndex(
-  //     (location) => location.name === formattedLocationName
-      
-  //   );
-  //    if (existingLocationIndex !== -1) {
-  //     //  const existingLocation = this.searchedLocations[existingLocationIndex];
-  //     const latitude = this.searchedLocations[existingLocationIndex].lat;
-  //     const longitude = this.searchedLocations[existingLocationIndex].lng;
-  //      fetch(`https://maps.googleapis.com/maps/api/timezone/json?location=${latitude},${longitude}&timestamp=${Date.now() / 1000}&key=AIzaSyBnOZude3pec_o9QgQhDNM7d2HNZ8LlGbI&timeZoneName=true`)
-  //      .then(response => response.json())
-  // .then(data => {
-  //     const cityTimeZone = data.timeZoneId;
-  //     const localTime = DateTime.now().setZone(cityTimeZone).toLocaleString(DateTime.TIME_SIMPLE);
-  //     //const formattedTimeZone = cityTimeZone.split('/').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join('/');
-  //      this.searchedLocations[existingLocationIndex].timeZone = cityTimeZone;
-  //      this.searchedLocations[existingLocationIndex].localTime = localTime;
-  // }).catch(error => {
-  //   console.error("Error fetching time zone data:", error);
-  // });
-  //    }else{
-
-     
-  //       //Creating geocoding services
-  //       const geocoder = new window.google.maps.Geocoder();
-  //       //Converting addresses to latitude and longitude using geocoding services
-  //       geocoder.geocode({ address: locationName }, (results, status) => {
-  //         if (status === 'OK' && results[0]) {
-  //           //Get the geographic coordinates of the first result
-  //           const location = results[0].geometry.location;
-  //           const latitude = results[0].geometry.location.lat();
-  //           const longitude = results[0].geometry.location.lng();
-  //           /*Display the location on a map and add a marker to 
-  //           each searched location every time the location changes.*/
-  //           this.marker = new window.google.maps.Marker({
-  //             position: location,
-  //             map: this.map,
-  //             title: locationName,
-  //           });
-
-  //           this.markers.push(this.marker);
-  //           //Move the window view to the location of the search results
-  //           this.map.setCenter(location);
-            
-  //       const searchResult = {
-  //         name: formattedLocationName,
-  //         timeZone: '',
-  //         localTime:'',
-  //          lat: latitude,
-  //          lng: longitude,
-  //       }
-  //   // this.searchedLocations.push(searchResult);
-  //    this.searchedLocations.unshift(searchResult);
-  //    this.displayedLocations = this.searchedLocations.slice(0,9);
-  //   //clear the input box
-  //   this.searchLocation = '';
-  //    this.totalPages = Math.ceil(this.searchedLocations.length / this.itemsPerPage);
-  //   } else {
-  //           console.error('Geocode was not successful for the following reason: ' + status);
-  //           alert('City not found. Please enter a valid city name.');
-  //        } });
-  //        }
-  //   }else{
-  //     console.log('Please enter a location name.');
-  //   }},
+ 
 handleSearch() {
   const locationName = this.searchLocation.trim();
 
@@ -319,7 +257,13 @@ updateLocationDetails(existingLocation, latitude, longitude) {
     },
 
     updateSelectAll() {
-  this.selectAll = this.selectedLocations.length === this.displayedLocations.length;
+const allCurrentPageRowsSelected = this.displayedLocations.every((location) =>
+        this.selectedLocations.includes(location)
+      );
+
+      // 自动勾选/取消全选框
+      this.selectAll = allCurrentPageRowsSelected;
+  //this.selectAll = this.selectedLocations.length === this.displayedLocations.length;
 },
 
     handleSelect(location) {
@@ -372,21 +316,66 @@ updateLocationDetails(existingLocation, latitude, longitude) {
     // 清空选中的地点
     this.selectedLocations = [];
     this.selectAll = false;
+    // 更新 displayedLocations 以包含剩余的记录
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    this.displayedLocations = this.searchedLocations.slice(startIndex, endIndex);
   }
 },
-    paginate(page){
-      const startIndex = (page - 1) * this.itemsPerPage;
-      const endIndex = startIndex + this.itemsPerPage;
-      this.currentPage = page;
-      this.displayedLocations = this.searchedLocations.slice(startIndex, endIndex);
+   
+    paginate(page) {
+  const startIndex = (page - 1) * this.itemsPerPage;
+  const endIndex = startIndex + this.itemsPerPage;
+  const totalPages = Math.ceil(this.searchedLocations.length / this.itemsPerPage);
+console.log('totalpages',totalPages);
+  if (page > totalPages) {
+    // 如果删除后的总页数小于当前页码，则将当前页码设置为最后一页
+    this.currentPage = totalPages;
+    console.log('currentpage',this.currentPage);
+  } else {
+    this.currentPage = page;
+    console.log('currentpage',this.currentPage);
+  }
+
+  this.displayedLocations = this.searchedLocations.slice(startIndex, endIndex);
+},
+
+toggleMarker(location) {
+      const marker = this.findMarkerForLocation(location);
+
+      if (marker) {
+        // 获取被点击标记的位置坐标
+        const markerPosition = marker.getPosition();
+        
+        // 使用地图API缩放地图并将中心设置为标记位置
+        this.map.setZoom(15); // 适当的缩放级别
+        this.map.setCenter(markerPosition);
+      }
     },
-    
+
+    isSelected(location) {
+      return this.selectedLocations.includes(location);
+    },
+
+    findMarkerForLocation(location) {
+      // 根据location查找匹配的marker
+      return this.markers.find(
+        (marker) => marker.getTitle().toLowerCase() === location.name.toLowerCase()
+      );
+    },
 
  },
  mounted() {
    // Initialize the map
   this.initMap();
  },
+ //创建一个计算属性来返回过滤后的页码数组：
+computed: {
+  filteredPages() {
+    const totalPages = Math.ceil(this.searchedLocations.length / this.itemsPerPage);
+    return Array.from({ length: totalPages }, (_, index) => index + 1).filter(page => page > 0);
+  }
+}
 
 };
 </script>
