@@ -25,9 +25,9 @@
         <th>
           <input id="custom-checkbox" type="checkbox" v-model="selectAll" @change="handleSelectAll"/>
         </th>
-        <th>Location</th>
-        <th>Time Zone</th>
-        <th>Local Time</th>
+        <th id="column-33">Location</th>
+        <th id="column-33">Time Zone</th>
+        <th id="column-33">Local Time</th>
       </tr>
     </thead>
     <tbody>
@@ -102,6 +102,7 @@ export default {
 
          //this.userLocation = {longitude,latitude};
          const userLocation = new window.google.maps.LatLng(latitude, longitude);
+           this.map.setZoom(16);
         //Remove the previous marker.
          if (this.marker) {
           this.marker.setMap(null);
@@ -113,7 +114,7 @@ export default {
           map: this.map,
           title: 'Marker Title',
         });
-         this.map.setZoom(20);
+       
         this.map.setCenter(userLocation);
        },
        (error) => {
@@ -451,6 +452,10 @@ computed: {
   #custom-table tbody tr:hover {
     background-color: #1195a4;
     cursor: pointer;
+  }
+
+  #column-33{
+    width: 33%;
   }
 
   #custom-checkbox{
