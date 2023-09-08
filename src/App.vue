@@ -113,6 +113,7 @@ export default {
           map: this.map,
           title: 'Marker Title',
         });
+         this.map.setZoom(20);
         this.map.setCenter(userLocation);
        },
        (error) => {
@@ -257,13 +258,12 @@ updateLocationDetails(existingLocation, latitude, longitude) {
     },
 
     updateSelectAll() {
-const allCurrentPageRowsSelected = this.displayedLocations.every((location) =>
+    const allCurrentPageRowsSelected = this.displayedLocations.every((location) =>
         this.selectedLocations.includes(location)
       );
 
       // 自动勾选/取消全选框
       this.selectAll = allCurrentPageRowsSelected;
-  //this.selectAll = this.selectedLocations.length === this.displayedLocations.length;
 },
 
     handleSelect(location) {
@@ -348,7 +348,7 @@ toggleMarker(location) {
         const markerPosition = marker.getPosition();
         
         // 使用地图API缩放地图并将中心设置为标记位置
-        this.map.setZoom(15); // 适当的缩放级别
+        this.map.setZoom(14); // 适当的缩放级别
         this.map.setCenter(markerPosition);
       }
     },
