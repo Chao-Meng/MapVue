@@ -1,22 +1,16 @@
 <template>
  <div id ="map-container">
-   <!-- The button to acquire user's cuttent location-->
    <div id="get-location-button"> 
      <button @click="getUserLocation"> 
      <img src="./map.png" alt="Get Current Location" /> 
      </button> 
      </div>
-  
-  <!-- Display the location on the map-->
   <div id="map" style="height: 600px; width: 100%;"></div>
-
-   <div id="search-container">
-     <!-- The search module-->
-     <input v-model = "searchLocation" @keyup.enter="handleSearch" placeholder="Enter a location" />
+  <div id="search-container">
+    <input v-model = "searchLocation" @keyup.enter="handleSearch" placeholder="Enter a location" />
       <button id="map-button" @click="handleSearch">Go</button>
-   </div>
+  </div>
 
-<!-- Delete button to remove selected records and markers -->
   <button id="delete-button" @click="showDeleteConfirmation">Delete</button>
 
   <!-- A table with pagination to show searched places-->
@@ -24,9 +18,7 @@
     <thead>
       <tr>
         <th>
-          <!-- A checkbox at the beginning of each row to let users select multiple records at the same time. -->
-          <!-- //<input id="custom-checkbox" type="checkbox" v-model="selectAll" @change="handleSelectAll"/> -->
-           <input id="custom-checkbox" type="checkbox" v-model="selectAll" @change="handleSelectAll" :disabled="!hasSearchedLocations" />
+          <input id="custom-checkbox" type="checkbox" v-model="selectAll" @change="handleSelectAll" :disabled="!hasSearchedLocations" />
         </th>
         <th id="column-33">Location</th>
         <th id="column-33">Time Zone</th>
@@ -52,8 +44,7 @@
   <div class="pagination">
     <button id="page-button" v-for="page in filteredPages" :key="page" @click="paginate(page)">{{ page }}</button>
   </div>
-  
-    <!-- Display the time zone and local time of the latest searched location -->
+
   <div v-if="latestSearchedLocation">
     <p>Searched location:</p>
     <p>Location: {{ latestSearchedLocation.name }}</p>
@@ -73,7 +64,7 @@ export default {
       searchedLocations: [],
       selectAll: false,
       selectedLocations: [],
-      displayedLocations: [],
+     // displayedLocations: [],
       totalPages: 1,
       latestSearchedLocation: null,
       map: null,
@@ -87,6 +78,7 @@ export default {
    };
  },
  methods: {
+   //acquire user's cuttent location
    getUserLocation() {  
      if("geolocation" in navigator) {
         navigator.geolocation.getCurrentPosition((position) =>{
@@ -94,12 +86,10 @@ export default {
          const latitude = position.coords.latitude;
          const userLocation = new window.google.maps.LatLng(latitude, longitude);
         this.map.setZoom(16);
-        //Remove the previous marker.
+        //Make the previous marker invisible.
          if (this.userLocationMarker) {
-         // this.marker.setMap(null);
           this.userLocationMarker.setVisible(false);
           console.log('user location:',userLocation);
-          //this.marker = null;
         }        
          this.userLocationMarker =  new window.google.maps.Marker({
           position:userLocation,
@@ -132,11 +122,6 @@ export default {
       };
       // Append the script to the document to load the API
       document.head.appendChild(script);
-    //  google.maps.event.addListener(this.map, 'zoom_changed', () => {
-    //       if (this.map.getZoom() < 2) {
-    //         this.map.setZoom(2);
-    //       }
-    //     });
     },
  
   handleSearch() {
@@ -150,12 +135,9 @@ export default {
       const existingLocationIndex = this.searchedLocations.findIndex(
         (location) => location.name === formattedLocationName
       );
-      // Creating geocoding services
       const geocoder = new window.google.maps.Geocoder();
-      // Converting addresses to latitude and longitude using geocoding services
       geocoder.geocode({ address: locationName }, (results, status) => {
         if (status === 'OK' && results[0]) {
-          // Get the geographic coordinates of the first result
           const location = results[0].geometry.location;
           const latitude = location.lat();
           const longitude = location.lng();
@@ -279,7 +261,6 @@ export default {
         this.executeDelete();
       } 
     } else {
-      //If the user does not check any valid rows and clicks the delete button, an alert is given.  
       alert(' Please check the information you want to delete first');
     }
   },
@@ -296,7 +277,7 @@ export default {
           const markerTitle = marker.getTitle() ? marker.getTitle().toLowerCase() : null; 
           console.log('move',markerTitle,nameToRemove);
           if (markerTitle === nameToRemove) {
-           // marker.setMap(null); // Remove marker from map
+          // Make the marker invisible.
            marker.setVisible(false);
            console.log('move',marker);
           // Remove marker from markers
@@ -319,7 +300,6 @@ export default {
       } 
     });
 
-    // Clear the selected locations
     this.selectedLocations = [];
     this.selectAll = false;
     this.rowsSelected = false;
@@ -329,6 +309,7 @@ export default {
     const endIndex = startIndex + this.itemsPerPage;
     this.displayedLocations = this.searchedLocations.slice(startIndex, endIndex);
   },
+
   paginate(page) {
     const startIndex = (page - 1) * this.itemsPerPage;
     const endIndex = startIndex + this.itemsPerPage;
@@ -378,12 +359,16 @@ export default {
   },
  //Creates a calculated property to return an array of filtered page numbers.
   computed: {
+    displayedLocations() {
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    return this.searchedLocations.slice(startIndex, endIndex);
+  },
     filteredPages() {
       const totalPages = Math.ceil(this.searchedLocations.length / this.itemsPerPage);
       return Array.from({ length: totalPages }, (_, index) => index + 1).filter(page => page > 0);
     },
     hasSearchedLocations() {
-    // 判断是否有搜索记录
     return this.searchedLocations.length > 0;
   },
 
