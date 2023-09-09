@@ -158,7 +158,7 @@ export default {
           } else {
             this.addNewLocation(formattedLocationName, latitude, longitude);
           }
-           this.map.setZoom(14);  
+           this.map.setZoom(12);  
         } else {
           console.error('Geocode was not successful for the following reason: ' + status);
           alert('City not found. Please enter a valid city name.');
@@ -307,7 +307,11 @@ export default {
     //update displayedLocations to show the remaining records
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     const endIndex = startIndex + this.itemsPerPage;
+
     this.displayedLocations = this.searchedLocations.slice(startIndex, endIndex);
+    if (this.displayedLocations.length === 0 && this.currentPage > 1) {
+    this.currentPage--;
+  }
   },
 
   paginate(page) {
