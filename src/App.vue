@@ -83,6 +83,7 @@ export default {
       itemsPerPage: 10,
       selectedRows:[],
       locations:[],
+      userLocationMarker: null,
    };
  },
  methods: {
@@ -94,18 +95,18 @@ export default {
          const userLocation = new window.google.maps.LatLng(latitude, longitude);
         this.map.setZoom(16);
         //Remove the previous marker.
-         if (this.marker) {
-          this.marker.setMap(null);
-         // this.marker.setVisible(false);
-          console.log('current marker:',this.marker);
-          this.marker = null;
+         if (this.userLocationMarker) {
+         // this.marker.setMap(null);
+          this.userLocationMarker.setVisible(false);
+          console.log('user location:',userLocation);
+          //this.marker = null;
         }        
-         this.marker =  new window.google.maps.Marker({
+         this.userLocationMarker =  new window.google.maps.Marker({
           position:userLocation,
           map: this.map,
           title: 'Marker Title',
-        });      
-        this.map.setCenter(userLocation);
+        });    
+        this.map.setCenter(userLocation);       
        },
        (error) => {
          console.error("Error getting user location:", error.message);
@@ -125,15 +126,25 @@ export default {
     const mapOptions = {
           center: { lat: 43.74822, lng: -79.28941 },
           zoom: 14,
+          minZoom:3,
         };
     this.map = new window.google.maps.Map(document.getElementById('map'), mapOptions);
       };
       // Append the script to the document to load the API
       document.head.appendChild(script);
+    //  google.maps.event.addListener(this.map, 'zoom_changed', () => {
+    //       if (this.map.getZoom() < 2) {
+    //         this.map.setZoom(2);
+    //       }
+    //     });
     },
  
   handleSearch() {
     const locationName = this.searchLocation.trim();
+    if (locationName.length === 0) {
+      alert('Please input a city.');
+      return; 
+    }
     if (locationName) {
       const formattedLocationName = locationName.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
       const existingLocationIndex = this.searchedLocations.findIndex(
@@ -165,6 +176,7 @@ export default {
           } else {
             this.addNewLocation(formattedLocationName, latitude, longitude);
           }
+           this.map.setZoom(14);  
         } else {
           console.error('Geocode was not successful for the following reason: ' + status);
           alert('City not found. Please enter a valid city name.');
@@ -274,7 +286,7 @@ export default {
 
   executeDelete() {
     const locationsToDelete = [...this.selectedLocations];
-   locationsToDelete.forEach((locationToDelete) => {
+    locationsToDelete.forEach((locationToDelete) => {
       // Convert location names to lowercase or null if empty
       const nameToRemove = locationToDelete.name ? locationToDelete.name.toLowerCase() : null; 
       if (nameToRemove !== null) {
@@ -317,24 +329,24 @@ export default {
     const endIndex = startIndex + this.itemsPerPage;
     this.displayedLocations = this.searchedLocations.slice(startIndex, endIndex);
   },
-    paginate(page) {
-      const startIndex = (page - 1) * this.itemsPerPage;
-      const endIndex = startIndex + this.itemsPerPage;
-      const totalPages = Math.ceil(this.searchedLocations.length / this.itemsPerPage);
-      console.log('totalpages',totalPages);
-      if (page > totalPages) {
-        /* If the total number of pages after deletion is less than the current page number
-        set the current page number as the last page*/
-        this.currentPage = totalPages;
-        console.log('currentpage',this.currentPage);
-      } else {
-        this.currentPage = page;
-        console.log('currentpage',this.currentPage);
-      }
-      this.displayedLocations = this.searchedLocations.slice(startIndex, endIndex);
-      //When turning pages, update the status of all checked according to whether
-      // the current row is fully checked or not.
-      this.updateSelectAll(); 
+  paginate(page) {
+    const startIndex = (page - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    const totalPages = Math.ceil(this.searchedLocations.length / this.itemsPerPage);
+    console.log('totalpages',totalPages);
+    if (page > totalPages) {
+      /* If the total number of pages after deletion is less than the current page number
+      set the current page number as the last page*/
+      this.currentPage = totalPages;
+      console.log('currentpage',this.currentPage);
+    } else {
+      this.currentPage = page;
+      console.log('currentpage',this.currentPage);
+    }
+    this.displayedLocations = this.searchedLocations.slice(startIndex, endIndex);
+    //When turning pages, update the status of all checked according to whether
+    // the current row is fully checked or not.
+    this.updateSelectAll(); 
   },
   
 //If the user clicks on a row in the table, the map shows that area and displays the marker
